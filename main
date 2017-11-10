@@ -1,0 +1,23 @@
+/* This is the console Executable, That makes use of the BullCow class.
+This acts as the view in a MVC patter, and is responsible for all user interation. For game logic see the FBullCowGame class.
+*/
+
+#include "FBullCowGame.h"
+
+using FString = std::string;
+using int32 = int;
+FBullCowGame BCGame;
+
+int main()
+{
+	bool bPlayAgain = false;
+	do 
+	{
+		BCGame.PrintIntro();
+		BCGame.PlayGame();
+		bPlayAgain = BCGame.AskToPlayAgain();
+	} 
+	while (bPlayAgain);
+
+	return 0;
+}	
