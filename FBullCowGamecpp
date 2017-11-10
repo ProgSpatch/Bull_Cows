@@ -1,0 +1,203 @@
+#include "FBullCowGame.h"
+
+
+using FString = std::string;
+using int32 = int;
+
+
+// define game to reset when user whats to play again.
+FBullCowGame::FBullCowGame() 
+{
+	Reset();
+}
+
+// set max tries
+int32 FBullCowGame::GetMaxTries() const 
+{
+	return MyMaxTries;
+}
+
+// return users current try
+int32 FBullCowGame::GetCurrentTry() const 
+{
+	return MyCurrentTry;
+}
+
+// Return the length of the hidden word
+int32 FBullCowGame::GetHiddenWordLength() const 
+{
+	return MyHiddenWord.length();
+}
+
+// Get info if game is won or not.
+bool FBullCowGame::IsGameWon() const
+{
+	return bGameIsWon;
+}
+
+// Error checking code to validate users guess input
+EGuessStatus FBullCowGame::CheckGuessValidity(FString Guess) const
+{
+		
+	int32 GuessWordLength = Guess.length();
+	std::sort(Guess.begin(), Guess.end());
+
+	for (int32 GChar = 0; GChar < GuessWordLength; GChar++)
+	{
+		if (Guess[GChar] == Guess[GChar + 1])
+		{
+			return EGuessStatus::Not_Isogram;
+		}
+	}
+
+	for (int32 GChar = 0; GChar < GuessWordLength; GChar++)
+	{
+		if (isupper(Guess[GChar]))
+		{
+			return EGuessStatus::Not_Lowercase;
+		}
+	}
+		if (Guess.length() != GetHiddenWordLength())
+		{
+			return EGuessStatus::Wrong_Length;
+		}
+		else
+		{
+			return EGuessStatus::OK;
+		}
+	
+}
+
+// accept users guess assuming it is valid.
+FBullCowCount FBullCowGame::SubmitValidGuess(FString Guess)
+{
+	MyCurrentTry++;
+	FBullCowCount BullCowCount;
+
+	int32 WordLength = MyHiddenWord.length(); // assuming same length as guess
+
+	for (int32 MHWChar = 0; MHWChar < WordLength; MHWChar++)
+	{
+		for (int32 GChar = 0; GChar < WordLength; GChar++)
+		{
+			if (Guess[GChar] == MyHiddenWord[MHWChar])
+			{
+				if (MHWChar == GChar)
+				{
+					BullCowCount.bulls++;
+				}
+				else
+				{
+					BullCowCount.cows++;
+				}
+			}
+		}
+	}
+
+
+	if (BullCowCount.bulls == WordLength)
+	{
+		bGameIsWon = true;
+	}
+	else
+	{
+		bGameIsWon = false;
+	}
+
+	return BullCowCount;
+
+}
+
+// reset the game if user wants to play again.
+void FBullCowGame::Reset()
+{
+	constexpr int32 MAX_TRIES = 8;
+	const FString HIDEN_WORD = "planet";
+	MyMaxTries = MAX_TRIES;
+	MyHiddenWord = HIDEN_WORD;
+	MyCurrentTry = 1;
+	bGameIsWon = false;
+	
+	return;
+}
+
+void FBullCowGame::PrintIntro()
+{
+	std::cout << "\n\nWelcome to Bulls and Cows" << std::endl;
+	std::cout << "Can you guess the " << GetHiddenWordLength() << " letter isogram I am thinking of?" << std::endl;
+	std::cout << std::endl;
+	return;
+}
+
+void FBullCowGame::PlayGame()
+{
+	Reset();
+	int32 MaxTries = GetMaxTries();
+
+	while (!IsGameWon() && GetCurrentTry() <= MaxTries)
+	{
+		FString Guess = GetValidGuess();
+		FBullCowCount BullCowCount = SubmitValidGuess(Guess);
+
+		std::cout << "Bulls = " << BullCowCount.bulls;
+		std::cout << ". Cows = " << BullCowCount.cows << "\n\n";
+	}
+	return PrintGameSummary();
+
+}
+
+bool FBullCowGame::AskToPlayAgain()
+{
+	std::cout << "Do you want to play again?(y/n) ";
+	FString Response = "";
+	std::getline(std::cin, Response);
+	std::cout << std::endl;
+
+	return (Response[0] == 'y') || (Response[0] == 'Y');
+}
+
+void FBullCowGame::PrintGameSummary()
+{
+	if (IsGameWon())
+	{
+		std::cout << "Well done you have guessed my word.\n\n";
+	}
+	else
+	{
+		std::cout << "Sorry you were unable to guess my word. \n\n";
+	}
+}
+
+FString FBullCowGame::GetValidGuess()
+{
+	EGuessStatus Status = EGuessStatus::Invalid_Status; // Decalre variable status to be in scope for Do while loop
+	FString Guess = "";
+	do
+	{
+		// Get a guess from the player
+		int32 CurrentTry = GetCurrentTry();
+		std::cout << "Try " << CurrentTry << ". Please enter your guess: ";
+
+		std::getline(std::cin, Guess);
+
+		// Check guess meets conditions and provide feedback
+
+		Status = CheckGuessValidity(Guess);
+		switch (Status)
+		{
+		case EGuessStatus::Wrong_Length:
+			std::cout << "Please enter a " << GetHiddenWordLength() << " letter word.\n";
+			break;
+		case EGuessStatus::Not_Isogram:
+			std::cout << "This is not an Isogram, Please enter a " << GetHiddenWordLength() << " letter word without repeating letters.\n";
+			break;
+		case EGuessStatus::Not_Lowercase:
+			std::cout << "Please enter your guess using only lowercase characters.\n";
+			break;
+		default:
+			break;
+		}
+		std::cout << std::endl;
+	} while (Status != EGuessStatus::OK); // End loop when no errors are found.
+	return Guess;
+}
